@@ -33,8 +33,8 @@ public class ExistingSession extends HttpServlet {
 		Connection conn = null;
 		Statement stmt = null;
 		
-		int apiKey = 45501942 ;
-		String apiSecret = "c29466810c08b4792114338919be1fd3a9c7b8ba";
+		int apiKey = 45502132 ;
+		String apiSecret = "5dd0e518687ab329f83e3ea978bf3677dad9d905";
 		String dbSessionId=null;
 		
 		OpenTok openTok = new OpenTok(apiKey,apiSecret);
@@ -94,7 +94,7 @@ public class ExistingSession extends HttpServlet {
 		String token=null;
 		
 		String roleIsSubscriber = "Subscriber";
-		String roleIsPublisher = "Publisher";
+		String roleIsPublisher  = "Publisher";
 		
 		String role = request.getParameter("tokenType");
 		

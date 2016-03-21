@@ -50,8 +50,9 @@
 				role =request.getAttribute("ROLE").toString();
 		%>
 				
-		<p id = "publisherCount"> Connecting... </p>
-		<p id = "totalCount"></p>
+		<p id = "connectionStatusPara"> Connecting......</p>
+		<p id = "publisherCountPara"></p>
+		<p id = "totalCountPara"></p>
 		<form action = "StartArchive" name = "myForm" id = "myForm">
 		
 			<input type = "hidden" name = "apiKey"    id = "apiKey"    value = "<%=apiKey%>" />
@@ -60,6 +61,16 @@
 			<input type = "hidden" name = "role"      id = "role"      value = "<%=role%>" />
 			<input type = "hidden" name = "archiveID" id = "archiveID" value = "" />
 				
+			<button type = "button" name = "disconnect" id = "disconnect" onclick = "this.disabled=true;
+																			 	  	functionHandler('<%=apiKey%>','<%=sessionID%>','<%=token%>','<%=apiSecret%>','Disconnect')"disabled>
+			 Disconnect
+			</button>
+			
+			<button type = "button" name = "connect" id = "connect" onclick = "this.disabled=true;
+																			  functionHandler('<%=apiKey%>','<%=sessionID%>','<%=token%>','<%=apiSecret%>','Connect')"disabled>
+			 Connect
+			</button>	
+			
 			<button type = "button" name = "startArchive" id = "startArchive" onclick = "this.disabled=true;
 																	                    document.getElementById('publish').disabled=true;
 																	   		            document.getElementById('unpublish').disabled=true;
@@ -90,18 +101,21 @@
 		
 		<script type="text/javascript">
 		
+			document.getElementById('disconnect').style.visibility = 'visible';
+			
 			if('<%=role%>' == "Subscriber"){
 				document.getElementById('startArchive').style.visibility = 'hidden';
 				document.getElementById('stopArchive').style.visibility  = 'hidden';
 				document.getElementById('publish').style.visibility      = 'hidden';
 				document.getElementById('unpublish').style.visibility    = 'hidden';
+				document.getElementById('connect').style.visibility      = 'hidden';
 				var element = document.getElementById("publisherDiv");
 				element.parentNode.removeChild(element);
 			}
 		
 			session = OT.initSession(<%=apiKey%>,'<%=sessionID%>');
 			
-			if('<%=role%>' == "Publisher"){
+			if('<%=role%>' == "Publisher" || '<%=role%>' == "Moderator" ){
 			publisher = OT.initPublisher('publisherDiv');
 			document.getElementById('publisherDiv').style.visibility = 'hidden';
 			}
@@ -117,36 +131,50 @@
 			
 			session.on({sessionConnected: function(event) {
 					console.log("CONNECTED !");
-					document.getElementById('publish').disabled=false;
+					document.getElementById("connectionStatusPara").innerHTML    = 'Connected to Session';
+					document.getElementById('publish').disabled    = false;
+					document.getElementById('connect').disabled    = true;
+					document.getElementById('disconnect').disabled = false;
+					document.getElementById('connect').style.visibility      = 'visible';
+					document.getElementById('disconnect').style.visibility   = 'visible';
 			      }
 			    });
 			
 			session.on({sessionDisconnected: function(event) {
-					console.log("OOPS! Disconnected");
+					console.log("Disconnected");
+					connectionCount = 0;
+					document.getElementById('publish').disabled = true;
+					document.getElementById("connectionStatusPara").innerHTML = 'Disconnected from Session. Click connect to reconnect.'; 
+					document.getElementById("totalCountPara").innerHTML = '';
+					document.getElementById('connect').style.visibility = 'visible';
 					document.getElementById('startArchive').disabled = true;
 					document.getElementById('stopArchive').disabled  = true;
 					document.getElementById('publish').disabled      = true;
 					document.getElementById('unpublish').disabled    = true;
+					document.getElementById('connect').disabled      = false;
+					document.getElementById('disconnect').disabled   = true;
 			      }
 			    });
 
-			if('<%=role%>' == "Publisher"){
-			publisher.on('streamCreated', function (event) {
-					document.getElementById('publisherDiv').style.visibility = 'visible';
-					document.getElementById('startArchive').disabled = false;
-				  	document.getElementById('unpublish').disabled    = false;
-				  	document.getElementById('stopArchive').disabled  = true;
-					console.log('Started Publishing');
-				}); 
-			
-	      	publisher.on("streamDestroyed", function (event) {
-		      document.getElementById('publisherDiv').style.visibility = 'hidden';
-			  document.getElementById('publish').disabled      = false;
-			  document.getElementById('startArchive').disabled = true;
-			  document.getElementById('stopArchive').disabled  = true;
-	          event.preventDefault();
-	          console.log('Stopped Publishing');
-	        });
+			if('<%=role%>' == "Publisher"||'<%=role%>' == "Moderator"){
+				publisher.on('streamCreated', function (event) {
+						document.getElementById('publisherDiv').style.visibility = 'visible';
+						document.getElementById('startArchive').disabled = false;
+					  	document.getElementById('unpublish').disabled    = false;
+					  	document.getElementById('stopArchive').disabled  = true;
+					  	document.getElementById("connectionStatusPara").innerHTML    = 'Connected to Session and publishing';
+						console.log('Started Publishing');
+					}); 
+				
+		      	publisher.on("streamDestroyed", function (event) {
+			      document.getElementById('publisherDiv').style.visibility = 'hidden';
+				  document.getElementById('publish').disabled      = false;
+				  document.getElementById('startArchive').disabled = true;
+				  document.getElementById('stopArchive').disabled  = true;
+				  document.getElementById("connectionStatusPara").innerHTML    = 'Connected to Session but stopped publishing';
+		          event.preventDefault();
+		          console.log('Stopped Publishing');
+		        });
 			}
 	        
 	      	var connectionCount = 0;
@@ -157,13 +185,13 @@
 	          if (event.connection.connectionId != session.connection.connectionId) {
 	            connectionCount++;
 	            console.log('Another client connected. ' + connectionCount + ' total.');
-	            document.getElementById("totalCount").innerHTML = connectionCount + ' client(s) connected to session';
+	            document.getElementById("totalCountPara").innerHTML = connectionCount + ' client(s) connected to session';
 	          }
 	        },
 	        connectionDestroyed: function connectionDestroyedHandler(event) {
 	          connectionCount--;
 	          console.log('A client disconnected. ' + connectionCount + ' total.');
-	          document.getElementById("totalCount").innerHTML = connectionCount + ' client(s) connected to session';
+	          document.getElementById("totalCountPara").innerHTML = connectionCount + ' client(s) connected to session';
 	        }
 	       });
 	      	
@@ -172,7 +200,7 @@
 	          publisherCount++;
 	          var subscriber = session.subscribe(event.stream, null, {insertMode: 'APPEND'}); 
 	          document.getElementById('startArchive').disabled = false;
-	          document.getElementById("publisherCount").innerHTML = publisherCount + ' client(s) publishing.';
+	          document.getElementById("publisherCountPara").innerHTML = publisherCount + ' client(s) publishing.';
 	        });
 	          
 	        var destroyElement = null;
@@ -182,7 +210,7 @@
 	          publisherCount--;
 	    	  document.getElementById('startArchive').disabled = true;
 	    	  document.getElementById('stopArchive').disabled  = true;
-	    	  document.getElementById("publisherCount").innerHTML = publisherCount + ' client(s) publishing.';
+	    	  document.getElementById("publisherCountPara").innerHTML = publisherCount + ' client(s) publishing.';
 	        });
 	      
 	      
@@ -221,6 +249,20 @@
 						    success: function(data) {
 						    }
 						});
+				} else if(actionName == 'Connect')	{
+						document.getElementById("connectionStatusPara").innerHTML    = 'Connecting...';
+						session.connect('<%=token%>', function(error) {
+						      if (error) {
+						        console.log(error.message);
+						        console.log("Error in connecting");
+						      } else {
+						        console.log("Connecting......");
+						      }
+						    });
+					
+				} else if(actionName == 'Disconnect')	{
+					session.unpublish(publisher);
+					session.disconnect();
 				}
 			 }
 			

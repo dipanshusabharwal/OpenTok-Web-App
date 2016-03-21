@@ -1,16 +1,13 @@
 package com.Opentok;
 
 import java.io.IOException;
-
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.sql.*;
-
 import com.opentok.MediaMode;
 import com.opentok.OpenTok;
 import com.opentok.Role;
@@ -40,13 +37,14 @@ public class CreateSession extends HttpServlet {
 		roomName=roomName.toLowerCase();
 		   
 		//creating opentok object using apikey and apisecret
-		int apiKey = 45501942 ;
-		String apiSecret = "c29466810c08b4792114338919be1fd3a9c7b8ba";		
+		int apiKey = 45502132 ;
+		String apiSecret = "5dd0e518687ab329f83e3ea978bf3677dad9d905";		
 		OpenTok openTok = new OpenTok(apiKey,apiSecret);
 	
 		//session related variables
 		Session routedSession = null;
 		String sessionID = null;
+		String role = "Moderator";
 		
 		//creating a routed session and obtaining its sessionid
 		try {
@@ -87,7 +85,7 @@ public class CreateSession extends HttpServlet {
 		 }catch(Exception e){
 			 
 		    e.printStackTrace();
-	    
+    
 		    RequestDispatcher requestDispatcher = request.getRequestDispatcher("/Welcome.jsp");
             requestDispatcher.forward(request, response);
             return;
@@ -122,6 +120,7 @@ public class CreateSession extends HttpServlet {
 		request.setAttribute("APISECRET", apiSecret);
 		request.setAttribute("SESSIONID", sessionID);
 		request.setAttribute("TOKEN", token);
+		request.setAttribute("ROLE", role);
 		
 		request.getRequestDispatcher("/VideoPage.jsp").forward(request,response);
 	}
